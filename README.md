@@ -1,4 +1,4 @@
-# PyGhost
+# PyGhost 👻
 
 Python client for the Ghost Security Platform API
 
