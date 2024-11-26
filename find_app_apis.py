@@ -1,93 +1,58 @@
 #!/usr/bin/env python3
 """
-Script to fetch app details and find related APIs by hostname.
+Script to find APIs associated with a specific app.
 """
-import argparse
+import os
 import sys
-from pyghost import GhostClient, GhostAPIError
+from dotenv import load_dotenv
+from pyghost import GhostClient
 
-def get_app_details(client, app_id):
-    """Fetch details for a specific app."""
-    try:
-        response = client.get(f"apps/{app_id}")
-        if isinstance(response, dict):
-            return response
-        print(f"Error: Unexpected response format when fetching app {app_id}")
-        return None
-    except GhostAPIError as e:
-        print(f"Error fetching app details: {e}")
-        return None
+# Load environment variables
+load_dotenv()
 
-def find_related_apis(client, hostname):
-    """Find all APIs that contain the given hostname."""
-    related_apis = []
-    try:
-        # Get all endpoints
-        endpoints = client.get_endpoints()
-        
-        # Filter endpoints that match the hostname
-        for endpoint in endpoints:
-            if isinstance(endpoint, str):
-                if hostname.lower() in endpoint.lower():
-                    related_apis.append({"url": endpoint})
-            elif isinstance(endpoint, dict):
-                if hostname.lower() in endpoint.get('url', '').lower():
-                    related_apis.append(endpoint)
-                
-        return related_apis
-    except GhostAPIError as e:
-        print(f"Error fetching endpoints: {e}")
-        return []
-
-def print_app_info(app):
-    """Print basic app information."""
-    print("\nApp Details:")
-    print(f"Name: {app['name']}")
-    print(f"ID: {app['id']}")
-    host = app['host']
-    print(f"Hostname: {host['name']}")
-
-def print_related_apis(apis):
-    """Print information about related APIs."""
-    if not apis:
-        print("\nNo related APIs found.")
-        return
-        
-    print(f"\nFound {len(apis)} related APIs:")
-    for api in apis:
-        print("\n---")
-        if isinstance(api, dict):
-            print(f"URL: {api.get('url', 'N/A')}")
-            print(f"Method: {api.get('method', 'N/A')}")
-            print(f"First Seen: {api.get('first_seen_at', 'N/A')}")
-            print(f"Last Seen: {api.get('last_seen_at', 'N/A')}")
-        else:
-            print(f"URL: {api}")
+# Get API configuration from environment
+API_KEY = os.getenv("GHOST_API_KEY")
+if not API_KEY:
+    raise ValueError("GHOST_API_KEY environment variable is required")
 
 def main():
-    parser = argparse.ArgumentParser(description="Find app details and related APIs by hostname")
-    parser.add_argument("app_id", help="ID of the app to analyze")
-    parser.add_argument("api_key", help="Ghost Security API key")
-    
-    args = parser.parse_args()
-    
-    # Initialize the client
-    client = GhostClient(api_key=args.api_key)
-    
-    # Get app details
-    app = get_app_details(client, args.app_id)
-    if not app:
+    """Find APIs for a specific app."""
+    if len(sys.argv) < 2:
+        print("Usage: python find_app_apis.py <app_id>")
         sys.exit(1)
+        
+    app_id = sys.argv[1]
     
-    # Print app information
-    print_app_info(app)
+    # Initialize client
+    client = GhostClient(api_key=API_KEY)
     
-    # Get hostname and find related APIs
-    hostname = app['host']['name']
-    related_apis = find_related_apis(client, hostname)
-    
-    # Print results
-    print_related_apis(related_apis)
+    try:
+        # Get app details
+        app = client.apps.get_app(app_id)
+        print(f"\nApp: {app.get('name', app_id)}")
+        
+        # Get app endpoints
+        endpoints = client.apps.get_app_endpoints(app_id)
+        
+        if isinstance(endpoints, dict) and 'items' in endpoints:
+            print(f"\nTotal endpoints: {endpoints.get('total', 0)}")
+            print(f"Page {endpoints.get('page', 1)} of {endpoints.get('pages', 1)}\n")
+            
+            for endpoint in endpoints['items']:
+                print(f"ID: {endpoint.get('id')}")
+                if 'path' in endpoint:
+                    print(f"Path: {endpoint['path']}")
+                if 'method' in endpoint:
+                    print(f"Method: {endpoint['method']}")
+                if 'created_at' in endpoint:
+                    print(f"Created: {endpoint['created_at']}")
+                print()
+        else:
+            print("No endpoints found")
+            
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

@@ -1,11 +1,17 @@
 """
 Configuration module for the Ghost Security API client.
 """
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 class GhostConfig:
     """Configuration class for the Ghost Security API client."""
     
-    DEFAULT_BASE_URL = "https://api.dev.ghostsecurity.com"
+    # Get base URL from environment or use default
+    DEFAULT_BASE_URL = os.getenv("GHOST_API_URL", "https://api.dev.ghostsecurity.com")
     API_VERSION = "v2"
     
     def __init__(self, api_key: str, base_url: str = None):
@@ -15,7 +21,8 @@ class GhostConfig:
         Args:
             api_key (str): The API key for authentication (JWT token)
             base_url (str, optional): The base URL for the API. 
-                                    Defaults to https://api.dev.ghostsecurity.com
+                                    Defaults to GHOST_API_URL from environment
+                                    or https://api.dev.ghostsecurity.com
         """
         if not api_key:
             raise ValueError("API key is required")

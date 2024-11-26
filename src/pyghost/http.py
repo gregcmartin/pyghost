@@ -1,12 +1,14 @@
 """
 Base HTTP client implementation for the Ghost Security API.
 """
+import os
 import logging
 from typing import Any, Optional, Dict
 import asyncio
 import requests
 import aiohttp
 from aiohttp.client_exceptions import ClientError
+from dotenv import load_dotenv
 
 from .config import GhostConfig
 from .exceptions import (
@@ -16,13 +18,16 @@ from .exceptions import (
     RetryError
 )
 
+# Load environment variables
+load_dotenv()
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Constants
-MAX_RETRIES = 3
-RETRY_DELAY = 1  # seconds
-REQUEST_TIMEOUT = 30  # seconds
+# Constants from environment
+MAX_RETRIES = int(os.getenv("GHOST_MAX_RETRIES", "3"))
+RETRY_DELAY = int(os.getenv("GHOST_RETRY_DELAY", "1"))  # seconds
+REQUEST_TIMEOUT = int(os.getenv("GHOST_REQUEST_TIMEOUT", "30"))  # seconds
 
 
 class BaseHttpClient:
