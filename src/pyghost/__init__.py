@@ -9,7 +9,10 @@ from .exceptions import (
     ClientNotInitializedError,
     ValidationError,
     AuthenticationError,
-    ResourceNotFoundError
+    ResourceNotFoundError,
+    ConnectionError,
+    RetryError,
+    TimeoutError
 )
 from .types import (
     EndpointKind,
@@ -33,6 +36,9 @@ __all__ = [
     "ValidationError",
     "AuthenticationError",
     "ResourceNotFoundError",
+    "ConnectionError",
+    "RetryError",
+    "TimeoutError",
     
     # Types and constants
     "EndpointKind",
