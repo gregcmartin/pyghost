@@ -10,7 +10,8 @@ from .base import SyncResource, AsyncResource
 
 def format_rfc3339(dt: datetime) -> str:
     """Format datetime to RFC3339 format."""
-    return dt.isoformat() + "Z"
+    # Format with milliseconds removed and proper UTC indicator
+    return dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def get_default_time_range(hours: int = 24) -> tuple[str, str]:
@@ -25,6 +26,9 @@ def get_default_time_range(hours: int = 24) -> tuple[str, str]:
     """
     end = datetime.now(timezone.utc)
     start = end - timedelta(hours=hours)
+    # Ensure times are on the hour for better caching
+    end = end.replace(minute=0, second=0, microsecond=0)
+    start = start.replace(minute=0, second=0, microsecond=0)
     return format_rfc3339(start), format_rfc3339(end)
 
 
