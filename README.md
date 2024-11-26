@@ -8,207 +8,169 @@ Python based API client for the Ghost Security Platform
 pip install -e .
 ```
 
+## Features
+
+- Full support for all Ghost Security Platform API v2 endpoints
+- Both synchronous and asynchronous clients
+- Resource-based API organization
+- Type hints and comprehensive documentation
+- Robust error handling
+- Modular and extensible design
+
 ## Usage
 
 ### Synchronous Usage
 
 ```python
-from pyghost import GhostClient
+from pyghost import GhostClient, EndpointFilters, EndpointKind
 
-# Initialize the client with your API key
+# Initialize the client
 client = GhostClient(api_key="your_api_key")
 
-# Get all endpoints
-endpoints = client.list_endpoints()
+# Access different API resources
+apps = client.apps.list_apps()
+endpoints = client.endpoints.list_endpoints()
+campaigns = client.campaigns.list_campaigns()
 
-# Get all apps
-apps = client.list_apps()
+# Use filters for endpoints
+filters = EndpointFilters(
+    size=25,
+    kind=EndpointKind.API,
+    is_first_party=True,
+    method=["GET", "POST"]
+)
+filtered_endpoints = client.endpoints.list_endpoints(filters)
 
-# Get endpoints for a specific app
-app_endpoints = client.get_app_endpoints("app-id")
+# Get specific resources
+app = client.apps.get_app("app-id")
+app_endpoints = client.apps.get_app_endpoints("app-id")
+app_assets = client.apps.get_app_assets("app-id")
 ```
 
 ### Asynchronous Usage
 
 ```python
 import asyncio
-from pyghost import AsyncGhostClient
+from pyghost import AsyncGhostClient, EndpointFilters
 
 async def main():
     # Use async context manager to handle session lifecycle
     async with AsyncGhostClient(api_key="your_api_key") as client:
-        # Get all endpoints
-        endpoints = await client.list_endpoints()
-        
-        # Get all apps
-        apps = await client.list_apps()
-        
-        # Get endpoints for a specific app
-        app_endpoints = await client.get_app_endpoints("app-id")
+        # Access different API resources
+        apps = await client.apps.list_apps()
+        endpoints = await client.endpoints.list_endpoints()
         
         # Run multiple requests concurrently
-        endpoints, apps = await asyncio.gather(
-            client.list_endpoints(),
-            client.list_apps()
+        apps, endpoints = await asyncio.gather(
+            client.apps.list_apps(),
+            client.endpoints.list_endpoints()
         )
 
 # Run the async code
 asyncio.run(main())
 ```
 
-## API Methods
+## API Resources
 
-Both `GhostClient` and `AsyncGhostClient` provide the same methods, with the async client requiring `await` for all operations:
+The client provides access to all Ghost Security Platform resources:
 
 ### APIs
-- `list_apis()`: List all APIs
-- `get_api(api_id)`: Get details for a specific API
-- `get_api_endpoints(api_id)`: Get endpoints for a specific API
+- `client.apis.list_apis()`
+- `client.apis.get_api(api_id)`
+- `client.apis.get_api_endpoints(api_id)`
 
 ### Apps
-- `list_apps()`: List all applications
-- `get_app(app_id)`: Get details for a specific app
-- `get_app_endpoints(app_id)`: Get endpoints for a specific app
-- `get_app_assets(app_id)`: Get assets for a specific app
+- `client.apps.list_apps()`
+- `client.apps.get_app(app_id)`
+- `client.apps.get_app_endpoints(app_id)`
+- `client.apps.get_app_assets(app_id)`
 
 ### Campaigns
-- `list_campaigns()`: List all campaigns
-- `get_campaign(campaign_id)`: Get details for a specific campaign
-- `get_campaign_issue_categories(campaign_id)`: Get issue categories for a campaign
-- `get_campaign_issues(campaign_id)`: Get issues for a campaign
-- `get_campaign_vulnerabilities(campaign_id)`: Get vulnerabilities for a campaign
+- `client.campaigns.list_campaigns()`
+- `client.campaigns.get_campaign(campaign_id)`
+- `client.campaigns.get_campaign_issue_categories(campaign_id)`
+- `client.campaigns.get_campaign_issues(campaign_id)`
+- `client.campaigns.get_campaign_vulnerabilities(campaign_id)`
 
 ### Domains
-- `list_domains()`: List all domains
-- `get_domain(domain_id)`: Get details for a specific domain
+- `client.domains.list_domains()`
+- `client.domains.get_domain(domain_id)`
 
 ### Endpoints
-- `list_endpoints(filters=None)`: List all endpoints with optional filtering
-- `get_endpoint_count(filters=None)`: Get count of endpoints matching filters
-- `get_endpoint(endpoint_id)`: Get details for a specific endpoint
-- `get_endpoint_activity(endpoint_id)`: Get endpoint request volume activity
-- `get_endpoint_apps(endpoint_id)`: Get apps associated with an endpoint
+- `client.endpoints.list_endpoints(filters=None)`
+- `client.endpoints.get_endpoint_count(filters=None)`
+- `client.endpoints.get_endpoint(endpoint_id)`
+- `client.endpoints.get_endpoint_activity(endpoint_id)`
+- `client.endpoints.get_endpoint_apps(endpoint_id)`
 
 ### Hosts
-- `list_hosts()`: List all hosts
-- `get_host(host_id)`: Get details for a specific host
+- `client.hosts.list_hosts()`
+- `client.hosts.get_host(host_id)`
 
 ### Issue Categories
-- `list_issue_categories()`: List all issue categories
-- `get_issue_category(category_id)`: Get details for a specific issue category
+- `client.issue_categories.list_issue_categories()`
+- `client.issue_categories.get_issue_category(category_id)`
 
 ### Issues
-- `list_issues()`: List all issues
-- `get_issue(issue_id)`: Get details for a specific issue
+- `client.issues.list_issues()`
+- `client.issues.get_issue(issue_id)`
 
 ### Vulnerabilities
-- `list_vulnerabilities()`: List all vulnerabilities
-- `get_vulnerability(vulnerability_id)`: Get details for a specific vulnerability
+- `client.vulnerabilities.list_vulnerabilities()`
+- `client.vulnerabilities.get_vulnerability(vulnerability_id)`
 
 ## Endpoint Filtering
 
-The `list_endpoints()` method accepts an optional `EndpointFilters` object for filtering results:
+The `EndpointFilters` class provides a clean interface for filtering endpoints:
 
 ```python
-from pyghost import GhostClient, EndpointFilters
+from pyghost import EndpointFilters, EndpointKind, LastSeenPeriod
 
-# Synchronous example
-client = GhostClient(api_key="your_api_key")
-
-# Create filters
 filters = EndpointFilters(
     size=25,                    # Results per page
     page=1,                     # Page number
     order_by="-created_at",     # Order by field (prefix with - for descending)
     format="REST",              # Filter by endpoint format
     method=["GET", "POST"],     # Filter by HTTP methods
-    last_seen="week",          # Filter by last seen period
+    last_seen=LastSeenPeriod.WEEK,  # Filter by last seen period
     search="api",              # Search path template and host
     min_request_count=100,     # Minimum number of requests
     host_id=["host-id"],       # Filter by host IDs
     is_first_party=True,       # Filter first party endpoints
-    kind="api",                # Filter by endpoint kind
+    kind=EndpointKind.API,     # Filter by endpoint kind
     port=[443],               # Filter by ports
     min_request_rate=10       # Minimum request rate over last 30 days
 )
 
-# Get filtered endpoints
-endpoints = client.list_endpoints(filters=filters)
-
-# Async example
-async with AsyncGhostClient(api_key="your_api_key") as client:
-    endpoints = await client.list_endpoints(filters=filters)
-```
-
-## Response Structure
-
-### Endpoints Response
-```python
-{
-    "items": [
-        {
-            "id": "endpoint-id",
-            "created_at": "timestamp",
-            "port": 443,
-            "path_template": "/api/path",
-            "method": "GET",
-            "format": "REST",
-            "is_first_party": true,
-            "kinds": ["api"],
-            "host": {
-                "id": "host-id",
-                "name": "hostname"
-            },
-            "traffic_summary": {
-                "request_count": 1000,
-                "average_requests_per_hour": 100
-            }
-        }
-    ],
-    "page": 1,
-    "pages": 1,
-    "size": 25,
-    "total": 100
-}
-```
-
-### Apps Response
-```python
-{
-    "items": [
-        {
-            "id": "app-id",
-            "name": "app-name",
-            "is_public": true,
-            "created_at": "timestamp",
-            "updated_at": "timestamp",
-            "host": {
-                "id": "host-id",
-                "name": "hostname"
-            },
-            "screenshot_url": "url",
-            "endpoint_counts": {
-                "api": {
-                    "total": 10,
-                    "first_party": 8,
-                    "third_party": 2
-                }
-            }
-        }
-    ],
-    "page": 1,
-    "pages": 1,
-    "size": 25,
-    "total": 100
-}
+endpoints = client.endpoints.list_endpoints(filters=filters)
 ```
 
 ## Error Handling
 
-Both synchronous and asynchronous clients include error handling through the `GhostAPIError` exception class, which provides:
-- Error message
-- HTTP status code
-- API response details (when available)
+The client provides detailed error handling through specific exception classes:
+
+```python
+from pyghost import (
+    GhostAPIError,
+    ClientNotInitializedError,
+    ValidationError,
+    AuthenticationError,
+    ResourceNotFoundError
+)
+
+try:
+    endpoints = client.endpoints.list_endpoints()
+except AuthenticationError:
+    print("Invalid API key")
+except ValidationError:
+    print("Invalid request parameters")
+except ResourceNotFoundError:
+    print("Resource not found")
+except GhostAPIError as e:
+    print(f"API error: {e.message}")
+    print(f"Status code: {e.status_code}")
+    print(f"Response: {e.response}")
+```
 
 ## License
 
