@@ -8,6 +8,20 @@ Python based API client for the Ghost Security Platform
 pip install -e .
 ```
 
+## Configuration
+
+The client can be configured using environment variables. Copy `.env.example` to `.env` and update the values:
+
+```bash
+cp .env.example .env
+```
+
+Required environment variables:
+- `GHOST_API_KEY`: Your Ghost Security API key
+
+Optional environment variables:
+- `GHOST_API_URL`: Override the default API URL (defaults to https://api.dev.ghostsecurity.com)
+
 ## Features
 
 - Full support for all Ghost Security Platform API v2 endpoints
@@ -68,6 +82,23 @@ async def main():
 
 # Run the async code
 asyncio.run(main())
+```
+
+### Loading Configuration from Environment
+
+```python
+import os
+from dotenv import load_dotenv
+from pyghost import GhostClient
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Initialize client with environment configuration
+client = GhostClient(
+    api_key=os.getenv("GHOST_API_KEY"),
+    base_url=os.getenv("GHOST_API_URL")  # Optional
+)
 ```
 
 ## API Resources
@@ -170,6 +201,25 @@ except GhostAPIError as e:
     print(f"API error: {e.message}")
     print(f"Status code: {e.status_code}")
     print(f"Response: {e.response}")
+```
+
+## Development
+
+### Running Tests
+
+1. Copy the example environment file:
+```bash
+cp .env.example .env
+```
+
+2. Update `.env` with your API credentials:
+```bash
+GHOST_API_KEY=your_api_key_here
+```
+
+3. Run the tests:
+```bash
+python test_all_endpoints.py
 ```
 
 ## License

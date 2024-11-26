@@ -51,3 +51,8 @@ test_*.py
 *_api_key*.py
 *_secret*.py
 *_credentials*.py
+
+# Environment files
+.env
+.env.*
+!.env.example
