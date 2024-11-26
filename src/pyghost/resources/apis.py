@@ -25,7 +25,8 @@ class SyncApiResource(BaseApiResource, SyncResource):
         List all APIs.
         
         Args:
-            bin_duration (str): Time window for request aggregation (e.g., "1h", "8h")
+            bin_duration (str): Time window for request aggregation (e.g., "1h", "8h").
+                              Must be >= 1h and <= 1d. Must be a multiple of 1h.
             
         Returns:
             List[Dict]: List of APIs
@@ -67,7 +68,8 @@ class AsyncApiResource(BaseApiResource, AsyncResource):
         List all APIs.
         
         Args:
-            bin_duration (str): Time window for request aggregation (e.g., "1h", "8h")
+            bin_duration (str): Time window for request aggregation (e.g., "1h", "8h").
+                              Must be >= 1h and <= 1d. Must be a multiple of 1h.
             
         Returns:
             List[Dict]: List of APIs

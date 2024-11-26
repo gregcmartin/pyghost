@@ -8,7 +8,7 @@ class GhostConfig:
     DEFAULT_BASE_URL = "https://api.dev.ghostsecurity.com"
     API_VERSION = "v2"
     
-    def __init__(self, api_key: str, base_url: str = DEFAULT_BASE_URL):
+    def __init__(self, api_key: str, base_url: str = None):
         """
         Initialize the Ghost Security API configuration.
         
@@ -21,7 +21,7 @@ class GhostConfig:
             raise ValueError("API key is required")
             
         self.api_key = api_key
-        self.base_url = base_url.rstrip('/')
+        self.base_url = (base_url or self.DEFAULT_BASE_URL).rstrip('/')
         
     @property
     def headers(self) -> dict:

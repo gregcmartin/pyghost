@@ -51,19 +51,6 @@ class SyncAppResource(BaseAppResource, SyncResource):
         path = self._build_path(self.RESOURCE_NAME, str(app_id), "endpoints")
         return self._get(path)
 
-    def get_app_assets(self, app_id: ResourceId) -> List[Dict]:
-        """
-        Get assets for a specific app.
-        
-        Args:
-            app_id: App identifier
-            
-        Returns:
-            List[Dict]: List of assets
-        """
-        path = self._build_path(self.RESOURCE_NAME, str(app_id), "assets")
-        return self._get(path)
-
 
 class AsyncAppResource(BaseAppResource, AsyncResource):
     """Asynchronous app resource operations."""
@@ -101,17 +88,4 @@ class AsyncAppResource(BaseAppResource, AsyncResource):
             List[Dict]: List of endpoints
         """
         path = self._build_path(self.RESOURCE_NAME, str(app_id), "endpoints")
-        return await self._get(path)
-
-    async def get_app_assets(self, app_id: ResourceId) -> List[Dict]:
-        """
-        Get assets for a specific app.
-        
-        Args:
-            app_id: App identifier
-            
-        Returns:
-            List[Dict]: List of assets
-        """
-        path = self._build_path(self.RESOURCE_NAME, str(app_id), "assets")
         return await self._get(path)
