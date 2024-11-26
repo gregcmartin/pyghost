@@ -10,6 +10,8 @@ pip install -e .
 
 ## Usage
 
+### Synchronous Usage
+
 ```python
 from pyghost import GhostClient
 
@@ -26,9 +28,37 @@ apps = client.list_apps()
 app_endpoints = client.get_app_endpoints("app-id")
 ```
 
+### Asynchronous Usage
+
+```python
+import asyncio
+from pyghost import AsyncGhostClient
+
+async def main():
+    # Use async context manager to handle session lifecycle
+    async with AsyncGhostClient(api_key="your_api_key") as client:
+        # Get all endpoints
+        endpoints = await client.list_endpoints()
+        
+        # Get all apps
+        apps = await client.list_apps()
+        
+        # Get endpoints for a specific app
+        app_endpoints = await client.get_app_endpoints("app-id")
+        
+        # Run multiple requests concurrently
+        endpoints, apps = await asyncio.gather(
+            client.list_endpoints(),
+            client.list_apps()
+        )
+
+# Run the async code
+asyncio.run(main())
+```
+
 ## API Methods
 
-The client provides comprehensive access to the Ghost Security Platform API:
+Both `GhostClient` and `AsyncGhostClient` provide the same methods, with the async client requiring `await` for all operations:
 
 ### APIs
 - `list_apis()`: List all APIs
@@ -82,6 +112,7 @@ The `list_endpoints()` method accepts an optional `EndpointFilters` object for f
 ```python
 from pyghost import GhostClient, EndpointFilters
 
+# Synchronous example
 client = GhostClient(api_key="your_api_key")
 
 # Create filters
@@ -103,6 +134,10 @@ filters = EndpointFilters(
 
 # Get filtered endpoints
 endpoints = client.list_endpoints(filters=filters)
+
+# Async example
+async with AsyncGhostClient(api_key="your_api_key") as client:
+    endpoints = await client.list_endpoints(filters=filters)
 ```
 
 ## Response Structure
@@ -170,7 +205,7 @@ endpoints = client.list_endpoints(filters=filters)
 
 ## Error Handling
 
-The client includes error handling through the `GhostAPIError` exception class, which provides:
+Both synchronous and asynchronous clients include error handling through the `GhostAPIError` exception class, which provides:
 - Error message
 - HTTP status code
 - API response details (when available)
