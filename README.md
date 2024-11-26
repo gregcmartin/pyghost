@@ -1,6 +1,6 @@
 # PyGhost
 
-Python based API client for the Ghost Security Platform
+Python client for the Ghost Security Platform API
 
 ## Installation
 
@@ -10,214 +10,134 @@ pip install -e .
 
 ## Configuration
 
-The client can be configured using environment variables. Copy `.env.example` to `.env` and update the values:
+Configuration is handled through environment variables. Copy `.env.example` to `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-Required environment variables:
+Required:
 - `GHOST_API_KEY`: Your Ghost Security API key
 
-Optional environment variables:
-- `GHOST_API_URL`: Override the default API URL (defaults to https://api.dev.ghostsecurity.com)
-
-## Features
-
-- Full support for all Ghost Security Platform API v2 endpoints
-- Both synchronous and asynchronous clients
-- Resource-based API organization
-- Type hints and comprehensive documentation
-- Robust error handling
-- Modular and extensible design
+Optional:
+- `GHOST_API_URL`: API URL (defaults to https://api.dev.ghostsecurity.com)
+- `GHOST_REQUEST_TIMEOUT`: Request timeout in seconds (default: 30)
+- `GHOST_MAX_RETRIES`: Maximum retry attempts (default: 3)
+- `GHOST_RETRY_DELAY`: Delay between retries in seconds (default: 1)
 
 ## Usage
 
-### Synchronous Usage
+### Basic Usage
 
 ```python
-from pyghost import GhostClient, EndpointFilters, EndpointKind
+from pyghost import GhostClient
+from dotenv import load_dotenv
+import os
 
-# Initialize the client
-client = GhostClient(api_key="your_api_key")
+# Load environment variables
+load_dotenv()
 
-# Access different API resources
+# Initialize client
+client = GhostClient(api_key=os.getenv("GHOST_API_KEY"))
+
+# List apps
 apps = client.apps.list_apps()
-endpoints = client.endpoints.list_endpoints()
-campaigns = client.campaigns.list_campaigns()
 
-# Use filters for endpoints
-filters = EndpointFilters(
-    size=25,
-    kind=EndpointKind.API,
-    is_first_party=True,
-    method=["GET", "POST"]
-)
-filtered_endpoints = client.endpoints.list_endpoints(filters)
-
-# Get specific resources
+# Get app details and endpoints
 app = client.apps.get_app("app-id")
-app_endpoints = client.apps.get_app_endpoints("app-id")
-app_assets = client.apps.get_app_assets("app-id")
+endpoints = client.apps.get_app_endpoints("app-id")
 ```
 
-### Asynchronous Usage
+### Async Usage
 
 ```python
 import asyncio
-from pyghost import AsyncGhostClient, EndpointFilters
+from pyghost import AsyncGhostClient
 
 async def main():
-    # Use async context manager to handle session lifecycle
-    async with AsyncGhostClient(api_key="your_api_key") as client:
-        # Access different API resources
+    async with AsyncGhostClient(api_key=os.getenv("GHOST_API_KEY")) as client:
+        # List apps
         apps = await client.apps.list_apps()
-        endpoints = await client.endpoints.list_endpoints()
         
-        # Run multiple requests concurrently
-        apps, endpoints = await asyncio.gather(
-            client.apps.list_apps(),
-            client.endpoints.list_endpoints()
-        )
+        # Get app details
+        app = await client.apps.get_app("app-id")
 
-# Run the async code
 asyncio.run(main())
 ```
 
-### Loading Configuration from Environment
+### Endpoint Filtering
 
 ```python
-import os
-from dotenv import load_dotenv
-from pyghost import GhostClient
+from pyghost import EndpointFilters
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Initialize client with environment configuration
-client = GhostClient(
-    api_key=os.getenv("GHOST_API_KEY"),
-    base_url=os.getenv("GHOST_API_URL")  # Optional
-)
-```
-
-## API Resources
-
-The client provides access to all Ghost Security Platform resources:
-
-### APIs
-- `client.apis.list_apis()`
-- `client.apis.get_api(api_id)`
-- `client.apis.get_api_endpoints(api_id)`
-
-### Apps
-- `client.apps.list_apps()`
-- `client.apps.get_app(app_id)`
-- `client.apps.get_app_endpoints(app_id)`
-- `client.apps.get_app_assets(app_id)`
-
-### Campaigns
-- `client.campaigns.list_campaigns()`
-- `client.campaigns.get_campaign(campaign_id)`
-- `client.campaigns.get_campaign_issue_categories(campaign_id)`
-- `client.campaigns.get_campaign_issues(campaign_id)`
-- `client.campaigns.get_campaign_vulnerabilities(campaign_id)`
-
-### Domains
-- `client.domains.list_domains()`
-- `client.domains.get_domain(domain_id)`
-
-### Endpoints
-- `client.endpoints.list_endpoints(filters=None)`
-- `client.endpoints.get_endpoint_count(filters=None)`
-- `client.endpoints.get_endpoint(endpoint_id)`
-- `client.endpoints.get_endpoint_activity(endpoint_id)`
-- `client.endpoints.get_endpoint_apps(endpoint_id)`
-
-### Hosts
-- `client.hosts.list_hosts()`
-- `client.hosts.get_host(host_id)`
-
-### Issue Categories
-- `client.issue_categories.list_issue_categories()`
-- `client.issue_categories.get_issue_category(category_id)`
-
-### Issues
-- `client.issues.list_issues()`
-- `client.issues.get_issue(issue_id)`
-
-### Vulnerabilities
-- `client.vulnerabilities.list_vulnerabilities()`
-- `client.vulnerabilities.get_vulnerability(vulnerability_id)`
-
-## Endpoint Filtering
-
-The `EndpointFilters` class provides a clean interface for filtering endpoints:
-
-```python
-from pyghost import EndpointFilters, EndpointKind, LastSeenPeriod
-
+# Create filters
 filters = EndpointFilters(
     size=25,                    # Results per page
-    page=1,                     # Page number
-    order_by="-created_at",     # Order by field (prefix with - for descending)
-    format="REST",              # Filter by endpoint format
-    method=["GET", "POST"],     # Filter by HTTP methods
-    last_seen=LastSeenPeriod.WEEK,  # Filter by last seen period
-    search="api",              # Search path template and host
-    min_request_count=100,     # Minimum number of requests
-    host_id=["host-id"],       # Filter by host IDs
-    is_first_party=True,       # Filter first party endpoints
-    kind=EndpointKind.API,     # Filter by endpoint kind
-    port=[443],               # Filter by ports
-    min_request_rate=10       # Minimum request rate over last 30 days
+    method=["GET", "POST"],     # HTTP methods
+    is_first_party=True,        # First party endpoints only
+    min_request_count=100       # Minimum request count
 )
 
+# Get filtered endpoints
 endpoints = client.endpoints.list_endpoints(filters=filters)
+```
+
+## Utility Scripts
+
+### List Endpoints
+
+List all endpoints with details:
+
+```bash
+python list_endpoints.py
+```
+
+### Find App APIs
+
+Find APIs associated with a specific app:
+
+```bash
+python find_app_apis.py <app_id>
 ```
 
 ## Error Handling
 
-The client provides detailed error handling through specific exception classes:
-
 ```python
 from pyghost import (
     GhostAPIError,
-    ClientNotInitializedError,
-    ValidationError,
-    AuthenticationError,
-    ResourceNotFoundError
+    ConnectionError,
+    RetryError,
+    TimeoutError
 )
 
 try:
     endpoints = client.endpoints.list_endpoints()
-except AuthenticationError:
-    print("Invalid API key")
-except ValidationError:
-    print("Invalid request parameters")
-except ResourceNotFoundError:
-    print("Resource not found")
+except ConnectionError as e:
+    print(f"Connection failed: {e}")
+except RetryError as e:
+    print(f"Max retries exceeded: {e}")
+except TimeoutError as e:
+    print(f"Request timed out: {e}")
 except GhostAPIError as e:
-    print(f"API error: {e.message}")
-    print(f"Status code: {e.status_code}")
-    print(f"Response: {e.response}")
+    print(f"API error: {e}")
+    if e.response:
+        print(f"Response: {e.response}")
 ```
+
+## Available Resources
+
+- Apps: List apps and get app details/endpoints
+- Endpoints: List endpoints, get counts and activity
+- Domains: List domains and get domain details
+- APIs: List APIs and get API details
+- Campaigns: List campaigns and get campaign details
+- Issues: List issues and get issue details
+- Vulnerabilities: List vulnerabilities and get details
 
 ## Development
 
-### Running Tests
+Run the test suite:
 
-1. Copy the example environment file:
-```bash
-cp .env.example .env
-```
-
-2. Update `.env` with your API credentials:
-```bash
-GHOST_API_KEY=your_api_key_here
-```
-
-3. Run the tests:
 ```bash
 python test_all_endpoints.py
 ```
