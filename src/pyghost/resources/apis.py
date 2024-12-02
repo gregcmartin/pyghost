@@ -1,10 +1,14 @@
 """
 API resources for the Ghost Security API.
 """
-from typing import Dict, List
+from typing import Dict, List, Optional
+from datetime import datetime
 
-from ..types import ApiId, DEFAULT_BIN_DURATION
-from .base import SyncResource, AsyncResource
+from ..types import (
+    ResourceId, PaginationParams, OrderingParams, FilterParams,
+    TimeRangeParams, TimeSeries
+)
+from .base import SyncResource, AsyncResource, PaginatedResponse
 
 
 class BaseApiResource:
@@ -12,92 +16,171 @@ class BaseApiResource:
     
     RESOURCE_NAME = "apis"
 
-    def _get_list_params(self, bin_duration: str = DEFAULT_BIN_DURATION) -> Dict:
-        """Get parameters for list operation."""
-        return self._prepare_params(bin_duration=bin_duration)
+    def _prepare_api_filters(
+        self,
+        host_name: Optional[str] = None,
+    ) -> FilterParams:
+        """
+        Prepare API-specific filters.
+        
+        Args:
+            host_name: Filter by host name
+            
+        Returns:
+            FilterParams: Prepared filters
+        """
+        return FilterParams(**{
+            "host.name": host_name
+        } if host_name else {})
 
 
 class SyncApiResource(BaseApiResource, SyncResource):
     """Synchronous API resource operations."""
     
-    def list_apis(self, bin_duration: str = DEFAULT_BIN_DURATION) -> List[Dict]:
+    def list_apis(
+        self,
+        time_range: TimeRangeParams,
+        pagination: Optional[PaginationParams] = None,
+        ordering: Optional[OrderingParams] = None,
+        host_name: Optional[str] = None
+    ) -> PaginatedResponse:
         """
         List all APIs.
         
         Args:
-            bin_duration (str): Time window for request aggregation (e.g., "1h", "8h").
-                              Must be >= 1h and <= 1d. Must be a multiple of 1h.
+            time_range: Time range parameters for traffic data
+            pagination: Pagination parameters
+            ordering: Ordering parameters (valid fields: host.name, endpoint_count)
+            host_name: Filter by host name
             
         Returns:
-            List[Dict]: List of APIs
+            PaginatedResponse: Paginated list of APIs
         """
-        return self._get(self.RESOURCE_NAME, params=self._get_list_params(bin_duration))
+        filters = self._prepare_api_filters(host_name)
+        params = self._prepare_params(pagination, ordering, time_range, filters)
+        return PaginatedResponse(self._get(self.RESOURCE_NAME, params=params))
 
-    def get_api(self, api_id: ApiId) -> Dict:
+    def get_api(
+        self,
+        api_id: ResourceId,
+        time_range: TimeRangeParams
+    ) -> Dict:
         """
         Get details for a specific API.
         
         Args:
             api_id: API identifier
+            time_range: Time range parameters for traffic data
             
         Returns:
-            Dict: API details
+            Dict: API details including traffic volume data
         """
         path = self._build_path(self.RESOURCE_NAME, str(api_id))
-        return self._get(path)
+        params = self._prepare_params(time_range=time_range)
+        return self._get(path, params=params)
 
-    def get_api_endpoints(self, api_id: ApiId) -> List[Dict]:
+    def list_api_endpoints(
+        self,
+        api_id: ResourceId,
+        pagination: Optional[PaginationParams] = None,
+        ordering: Optional[OrderingParams] = None,
+        last_traffic_after: Optional[datetime] = None,
+        min_request_count: Optional[int] = None
+    ) -> PaginatedResponse:
         """
-        Get endpoints for a specific API.
+        List endpoints for a specific API.
         
         Args:
             api_id: API identifier
+            pagination: Pagination parameters
+            ordering: Ordering parameters (valid fields: path_template, method, created_at, last_traffic_at, request_rate, request_count)
+            last_traffic_after: Filter by last traffic time
+            min_request_count: Filter by minimum request count
             
         Returns:
-            List[Dict]: List of endpoints
+            PaginatedResponse: Paginated list of endpoints
         """
         path = self._build_path(self.RESOURCE_NAME, str(api_id), "endpoints")
-        return self._get(path)
+        filters = FilterParams(
+            last_traffic_after=last_traffic_after.isoformat() if last_traffic_after else None,
+            min_request_count=min_request_count
+        )
+        params = self._prepare_params(pagination, ordering, filters=filters)
+        return PaginatedResponse(self._get(path, params=params))
 
 
 class AsyncApiResource(BaseApiResource, AsyncResource):
     """Asynchronous API resource operations."""
     
-    async def list_apis(self, bin_duration: str = DEFAULT_BIN_DURATION) -> List[Dict]:
+    async def list_apis(
+        self,
+        time_range: TimeRangeParams,
+        pagination: Optional[PaginationParams] = None,
+        ordering: Optional[OrderingParams] = None,
+        host_name: Optional[str] = None
+    ) -> PaginatedResponse:
         """
         List all APIs.
         
         Args:
-            bin_duration (str): Time window for request aggregation (e.g., "1h", "8h").
-                              Must be >= 1h and <= 1d. Must be a multiple of 1h.
+            time_range: Time range parameters for traffic data
+            pagination: Pagination parameters
+            ordering: Ordering parameters (valid fields: host.name, endpoint_count)
+            host_name: Filter by host name
             
         Returns:
-            List[Dict]: List of APIs
+            PaginatedResponse: Paginated list of APIs
         """
-        return await self._get(self.RESOURCE_NAME, params=self._get_list_params(bin_duration))
+        filters = self._prepare_api_filters(host_name)
+        params = self._prepare_params(pagination, ordering, time_range, filters)
+        response = await self._get(self.RESOURCE_NAME, params=params)
+        return PaginatedResponse(response)
 
-    async def get_api(self, api_id: ApiId) -> Dict:
+    async def get_api(
+        self,
+        api_id: ResourceId,
+        time_range: TimeRangeParams
+    ) -> Dict:
         """
         Get details for a specific API.
         
         Args:
             api_id: API identifier
+            time_range: Time range parameters for traffic data
             
         Returns:
-            Dict: API details
+            Dict: API details including traffic volume data
         """
         path = self._build_path(self.RESOURCE_NAME, str(api_id))
-        return await self._get(path)
+        params = self._prepare_params(time_range=time_range)
+        return await self._get(path, params=params)
 
-    async def get_api_endpoints(self, api_id: ApiId) -> List[Dict]:
+    async def list_api_endpoints(
+        self,
+        api_id: ResourceId,
+        pagination: Optional[PaginationParams] = None,
+        ordering: Optional[OrderingParams] = None,
+        last_traffic_after: Optional[datetime] = None,
+        min_request_count: Optional[int] = None
+    ) -> PaginatedResponse:
         """
-        Get endpoints for a specific API.
+        List endpoints for a specific API.
         
         Args:
             api_id: API identifier
+            pagination: Pagination parameters
+            ordering: Ordering parameters (valid fields: path_template, method, created_at, last_traffic_at, request_rate, request_count)
+            last_traffic_after: Filter by last traffic time
+            min_request_count: Filter by minimum request count
             
         Returns:
-            List[Dict]: List of endpoints
+            PaginatedResponse: Paginated list of endpoints
         """
         path = self._build_path(self.RESOURCE_NAME, str(api_id), "endpoints")
-        return await self._get(path)
+        filters = FilterParams(
+            last_traffic_after=last_traffic_after.isoformat() if last_traffic_after else None,
+            min_request_count=min_request_count
+        )
+        params = self._prepare_params(pagination, ordering, filters=filters)
+        response = await self._get(path, params=params)
+        return PaginatedResponse(response)

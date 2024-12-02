@@ -7,17 +7,14 @@ from .http import SyncHttpClient, AsyncHttpClient
 from .resources.apis import SyncApiResource, AsyncApiResource
 from .resources.apps import SyncAppResource, AsyncAppResource
 from .resources.campaigns import SyncCampaignResource, AsyncCampaignResource
-from .resources.endpoints import (
-    SyncEndpointResource, AsyncEndpointResource,
-    EndpointFilters
-)
+from .resources.endpoints import SyncEndpointResource, AsyncEndpointResource
 from .resources.infrastructure import (
     SyncDomainResource, AsyncDomainResource,
     SyncHostResource, AsyncHostResource
 )
 from .resources.security import (
-    SyncIssueResource, AsyncIssueResource,
     SyncIssueCategoryResource, AsyncIssueCategoryResource,
+    SyncIssueResource, AsyncIssueResource,
     SyncVulnerabilityResource, AsyncVulnerabilityResource
 )
 
@@ -43,8 +40,8 @@ class GhostClient:
         self.endpoints = SyncEndpointResource(http_client)
         self.domains = SyncDomainResource(http_client)
         self.hosts = SyncHostResource(http_client)
-        self.issues = SyncIssueResource(http_client)
         self.issue_categories = SyncIssueCategoryResource(http_client)
+        self.issues = SyncIssueResource(http_client)
         self.vulnerabilities = SyncVulnerabilityResource(http_client)
 
 
@@ -69,8 +66,8 @@ class AsyncGhostClient:
         self.endpoints = AsyncEndpointResource(self.http_client)
         self.domains = AsyncDomainResource(self.http_client)
         self.hosts = AsyncHostResource(self.http_client)
-        self.issues = AsyncIssueResource(self.http_client)
         self.issue_categories = AsyncIssueCategoryResource(self.http_client)
+        self.issues = AsyncIssueResource(self.http_client)
         self.vulnerabilities = AsyncVulnerabilityResource(self.http_client)
 
     async def __aenter__(self):
